@@ -1,12 +1,14 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+import os
 import numpy as np
 import time
 
+NUM_RUNS = 50
+OUTPUT_FILE = "opacity_data.csv"
+
 def fill_form(driver, mixture, temp_min, temp_max, rho_min, rho_max, num_rho):
-    print("Filling in data...")
-    
     # Fill mixture field (e.g. 0.5 h 0.5 he)
     mixture_field = driver.find_element(By.ID, "user-spec-mix-value")
     mixture_field.clear()
@@ -31,7 +33,7 @@ def fill_form(driver, mixture, temp_min, temp_max, rho_min, rho_max, num_rho):
     
     # Press submit
     driver.find_element(By.CSS_SELECTOR, "button[value='Submit']").click()
-    print("Form submitted!")
+
 
 def click_column_data(driver):
     driver.find_element(
@@ -41,35 +43,45 @@ def click_column_data(driver):
 
 
 def main():
-    print("Fetching Data from LANL TOPS")
+    print(f"=== Fetching Data from LANL TOPS ===")
+
+    if (os.path.exists(OUTPUT_FILE)):
+        os.remove(OUTPUT_FILE)
     
     # Start browser
     driver = webdriver.Chrome()
     
     try:
-        # Navigate to site
-        print("\nNavigating to https://aphysics2.lanl.gov/")
-        driver.get("https://aphysics2.lanl.gov/")
-        time.sleep(2)
+        for run in range(1, NUM_RUNS + 1):
+            print(f"\n Fetching run {run}/{NUM_RUNS}")
 
-        # Get random element mixture
-        fractions = np.random.dirichlet([1, 1, 1])
-        mixture = f"{fractions[0]} h {fractions[1]} he {fractions[2]} al"
-        
-        # Page 1: Fill form
-        fill_form(driver, mixture, temp_min=2e-5, temp_max=50, rho_min=1e-5, rho_max=100, num_rho=20)
-        time.sleep(3)
+            # Navigate to site
+            print("\tNavigating to https://aphysics2.lanl.gov/")
+            driver.get("https://aphysics2.lanl.gov/")
+            time.sleep(2)
 
-        # Page 2: Click button
-        click_column_data(driver)
-        time.sleep(3)
+            # Get random element mixture
+            fractions = np.random.dirichlet([1, 1, 1])
+            mixture = f"{fractions[0]} h {fractions[1]} he {fractions[2]} al"
+            
+            # Page 1: Fill form
+            print("\tFilling in form")
+            fill_form(driver, mixture, temp_min=2e-5, temp_max=50, rho_min=1e-5, rho_max=100, num_rho=20)
+            print("\tForm submitted!")
+            time.sleep(3)
+
+            # Page 2: Click button
+            click_column_data(driver)
+            time.sleep(3)
+            
+            # Page 3: Extract data
+            
+            print(f"\tFetch complete for mixture {mixture}")
         
-        # Page 3: Extract data
-        
-        print(f"\nFetch Complete for mixture {mixture}")
+        print(f"All runs complete! Check {OUTPUT_FILE}")
         
     except Exception as e:
-        print(f"\nError: {e}")
+        print(f"\nError (run {run}): {e}")
         
     finally:
         time.sleep(2)
