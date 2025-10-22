@@ -11,7 +11,7 @@ Our data source is https://aphysics2.lanl.gov/
     - Run `pip install selenium numpy webdriver-manager`
 - Maybe edit settings in `fetch_data.py`
 - Run `python fetch_data.py` to execute fetching
-- ???
+- Check `opacity_data.csv` for results!
 
 ### Training the Model
 TBD

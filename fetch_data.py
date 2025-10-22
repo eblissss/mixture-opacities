@@ -9,7 +9,10 @@ import os
 import numpy as np
 import time
 
-NUM_RUNS = 1
+### TODOS: Add some noise to temp/density min/max
+###        Optimize waits
+
+NUM_RUNS = 3
 OUTPUT_FILE = "opacity_data.csv"
 USE_CHROME_DEV = True
 CHROME_VERSION = "143.0.7475.7"
@@ -23,10 +26,10 @@ def fill_form(driver, mixture, temp_min, temp_max, rho_min, rho_max, num_rho):
 
     # Set temperature range (keV)
     tlow_select = Select(driver.find_element(By.ID, "temperature-low"))
-    tlow_select.select_by_visible_text(f" {temp_min}")
+    tlow_select.select_by_visible_text(temp_min)
 
     tup_select = Select(driver.find_element(By.ID, "temperature-high"))
-    tup_select.select_by_visible_text(f" {temp_max}")
+    tup_select.select_by_visible_text(temp_max)
 
     # Set density range (g/cm^3)
     driver.find_element(By.NAME, "rlow").clear()
@@ -44,7 +47,7 @@ def fill_form(driver, mixture, temp_min, temp_max, rho_min, rho_max, num_rho):
 
 def click_column_data(driver):
     driver.find_element(
-        By.XPATH, "//input[./*[contains(text(), 'Numerical by Columns')]]"
+        By.XPATH, "//button[contains(text(), 'Numerical by Columns')]"
     ).click()
 
 
@@ -53,7 +56,7 @@ def extract_to_csv(driver, filename, mix_fractions):
     content = driver.find_element(By.CSS_SELECTOR, "code.text-muted").get_attribute(
         "innerHTML"
     )
-    lines = [line.strip() for line in content.split("<br>")]
+    lines = [line.strip() for line in content.replace("&nbsp;", " ").split("<br>")]
 
     data = []
     temp = None
@@ -143,6 +146,7 @@ def main():
 
             # Get random element mixture
             fractions = np.random.dirichlet([1, 1, 1])
+            fractions = np.trunc(fractions * 1e6) / 1e6
             mixture = f"{fractions[0]} h {fractions[1]} he {fractions[2]} al"
 
             # Page 1: Fill form (make sure options are valid on site)
@@ -154,7 +158,7 @@ def main():
                 temp_max="40",
                 rho_min="0.00001",
                 rho_max="100.",
-                num_rho="20",
+                num_rho="10",
             )
             print("\tForm submitted!")
             time.sleep(3)
