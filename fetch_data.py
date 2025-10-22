@@ -33,6 +33,12 @@ def fill_form(driver, mixture, temp_min, temp_max, rho_min, rho_max, num_rho):
     driver.find_element(By.CSS_SELECTOR, "button[value='Submit']").click()
     print("Form submitted!")
 
+def click_column_data(driver):
+    driver.find_element(
+        By.XPATH, 
+        "//input[./*[contains(text(), 'Numerical by Columns')]]"
+    ).click()
+
 
 def main():
     print("Fetching Data from LANL TOPS")
@@ -55,6 +61,8 @@ def main():
         time.sleep(3)
 
         # Page 2: Click button
+        click_column_data(driver)
+        time.sleep(3)
         
         # Page 3: Extract data
         
