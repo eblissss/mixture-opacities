@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+import csv
 import os
 import numpy as np
 import time
@@ -42,6 +43,49 @@ def click_column_data(driver):
     ).click()
 
 
+def extract_to_csv(driver, filename, mix_fractions):
+    # Get the output text content
+    content = driver.find_element(By.CSS_SELECTOR, "code.text-muted").get_attribute("innerHTML")
+    lines = [line.strip() for line in content.split("<br>")]
+
+    data = []
+    temp = None
+
+    # Parse the data
+    for line in lines:
+        if not line:
+            continue
+
+        # Update the temperature
+        if "T= " in line:
+            parts = line.split()
+            for i in range(len(parts)):
+                if parts[i] == "T=" and i + 1 < len(parts):
+                    temp = parts[i + 1]
+                    break
+            continue
+
+        # Get data lines
+        if line[0].isdigit() and temp:
+            parts = line.split()
+            density = parts[0]
+            rosseland = parts[1]
+            planck = parts[2]
+
+            data.append([mix_fractions[0], mix_fractions[1], mix_fractions[2], temp, density, rosseland, planck])
+
+    # Update CSV file
+    mode = 'a' if os.path.exists(filename) else 'w'
+    with open(filename, mode, newline='') as file:
+        writer = csv.writer(file)
+        if mode == 'w':
+            # Set CSV headers
+            writer.writerow(["Mix_H", "Mix_He", "Mix_Al", "Temperature", "Density", "Rosseland_opacity", "Planck_opacity"])
+        writer.writerows(data)
+
+    return len(data)
+
+
 def main():
     print(f"=== Fetching Data from LANL TOPS ===")
 
@@ -72,11 +116,15 @@ def main():
 
             # Page 2: Click button
             click_column_data(driver)
+            print("\tColumn data selected")
             time.sleep(3)
             
             # Page 3: Extract data
+            print("\tExtracting column data")
+            num_extracted = extract_to_csv(driver, OUTPUT_FILE, fractions)
+            print(f"\tExtracted {num_extracted} data points!")
             
-            print(f"\tFetch complete for mixture {mixture}")
+            print(f"Fetch complete for mixture {mixture}")
         
         print(f"All runs complete! Check {OUTPUT_FILE}")
         
