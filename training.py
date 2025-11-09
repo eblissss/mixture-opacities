@@ -15,7 +15,7 @@ from model import OpacityNet
 
 CONFIG = {
     "data_path": "opacity_data.csv",
-    "val_split": 0.2,
+    "val_split": 0.1,
     "batch_size": 256,
     "epochs": 200,
     "learning_rate": 1e-3,
