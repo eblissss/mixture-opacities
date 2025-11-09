@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
@@ -9,10 +11,7 @@ import os
 import numpy as np
 import time
 
-### TODOS: Add some noise to temp/density min/max
-###        Optimize waits
-
-NUM_RUNS = 3
+NUM_RUNS = 200
 OUTPUT_FILE = "opacity_data.csv"
 USE_CHROME_DEV = True
 CHROME_VERSION = "143.0.7475.7"
@@ -142,12 +141,16 @@ def main():
             # Navigate to site
             print("\tNavigating to https://aphysics2.lanl.gov/")
             driver.get("https://aphysics2.lanl.gov/")
-            time.sleep(3)
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "user-spec-mix-value")))
 
             # Get random element mixture
             fractions = np.random.dirichlet([1, 1, 1])
             fractions = np.trunc(fractions * 1e6) / 1e6
             mixture = f"{fractions[0]} h {fractions[1]} he {fractions[2]} al"
+
+            rho_min = np.random.uniform(0.000005, 0.00002)
+            rho_max = np.random.uniform(75, 125)
+            num_rho = np.random.randint(11, 20)
 
             # Page 1: Fill form (make sure options are valid on site)
             print("\tFilling in form")
@@ -156,17 +159,17 @@ def main():
                 mixture,
                 temp_min="0.0005",
                 temp_max="40",
-                rho_min="0.00001",
-                rho_max="100.",
-                num_rho="10",
+                rho_min=f"{rho_min:.6f}",
+                rho_max=f"{rho_max:.1f}",
+                num_rho=str(num_rho),
             )
             print("\tForm submitted!")
-            time.sleep(3)
+            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Numerical by Columns')]")))
 
             # Page 2: Click button
             click_column_data(driver)
             print("\tColumn data selected")
-            time.sleep(3)
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "code.text-muted")))
 
             # Page 3: Extract data
             print("\tExtracting column data")
