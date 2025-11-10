@@ -14,6 +14,34 @@ CONFIG = {
     "show_progress": True,
 }
 
+def preprocess_inputs(X: np.ndarray) -> np.ndarray:
+    """
+    Apply log-transform to temperature and density
+    KEEPS ORIGINAL COLUMN ORDER
+    
+    Args:
+        X: Input array [N, 5] = [mH, mHe, mAl, Temperature, Density]
+    
+    Returns:
+        Preprocessed array [N, 5] = [mH, mHe, mAl, log10(Temperature), log10(Density)]
+    """
+    # Extract columns (original order)
+    mix_H = X[:, 0]
+    mix_He = X[:, 1]
+    mix_Al = X[:, 2]
+    temperature = X[:, 3]
+    density = X[:, 4]
+    
+    # Apply log transform (add epsilon to avoid log(0))
+    epsilon = 1e-10
+    log_temperature = np.log10(np.maximum(temperature, epsilon))
+    log_density = np.log10(np.maximum(density, epsilon))
+    
+    # Keep original order: [mH, mHe, mAl, log_temp, log_density]
+    X_preprocessed = np.column_stack([mix_H, mix_He, mix_Al, log_temperature, log_density])
+    
+    return X_preprocessed
+
 
 def predict(X: np.ndarray) -> np.ndarray:
     # Setup
@@ -28,16 +56,22 @@ def predict(X: np.ndarray) -> np.ndarray:
     checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     scaler_X = checkpoint["scaler_X"]
     scaler_y = checkpoint["scaler_y"]
+    predict_log = checkpoint.get("predict_log", False)
 
     model = OpacityNet().to(device)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
     print(f"Model loaded! Input samples: {len(X)}")
+    print(f"Predict log-opacities: {predict_log}")
 
     # Validate input shape
     if X.shape[1] != 5:
         raise ValueError(f"Input has {X.shape[1]} features, but model expects 5!")
+
+    # Preprocess inputs (log-transform) BEFORE standardization
+    print("Preprocessing inputs (log-transform)...")
+    X_preprocessed = preprocess_inputs(X)
 
     # Standardize
     X_scaled = scaler_X.transform(X)
@@ -74,6 +108,11 @@ def predict(X: np.ndarray) -> np.ndarray:
     # Process predictions
     predictions = torch.cat(predictions).numpy()
     predictions = scaler_y.inverse_transform(predictions)
+
+    # If model predicted log-opacities, convert back to real scale
+    if predict_log:
+        print("Converting from log-space to real opacities...")
+        predictions = np.power(10, predictions)
 
     print(f"Predictions complete!\n")
 

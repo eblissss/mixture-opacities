@@ -22,7 +22,51 @@ CONFIG = {
     "weight_decay": 1e-5,
     "early_stopping_patience": 15,
     "num_workers": 8,
+    "predict_log": True,
 }
+
+def preprocess_data(df):
+    """
+    Preprocess raw data: apply log transforms to features and targets
+    
+    Args:
+        df: DataFrame with columns [Mix_H, Mix_He, Mix_Al, Temperature, Density, 
+                                     Rosseland_opacity, Planck_opacity]
+    
+    Returns:
+        X: Preprocessed features [N, 5]
+        y: Preprocessed targets [N, 2]
+    """
+    # Extract raw features
+    mix_H = df["Mix_H"].values
+    mix_He = df["Mix_He"].values
+    mix_Al = df["Mix_Al"].values
+    temperature = df["Temperature"].values
+    density = df["Density"].values
+    
+    # Apply log transform to temperature and density (span many orders of magnitude)
+    epsilon = 1e-10  # Avoid log(0)
+    log_temperature = np.log10(np.maximum(temperature, epsilon))
+    log_density = np.log10(np.maximum(density, epsilon))
+    
+    # order: [mH, mHe, mAl, log_temp, log_density]
+    X = np.column_stack([mix_H, mix_He, mix_Al, log_temperature, log_density])
+    
+    # Extract targets
+    rosseland = df["Rosseland_opacity"].values
+    planck = df["Planck_opacity"].values
+    
+    if CONFIG["predict_log"]:
+        # Apply log transform to targets
+        log_rosseland = np.log10(np.maximum(rosseland, epsilon))
+        log_planck = np.log10(np.maximum(planck, epsilon))
+        y = np.column_stack([log_rosseland, log_planck])
+        print("Targets: log10(opacities)")
+    else:
+        y = np.column_stack([rosseland, planck])
+        print("Targets: raw opacities")
+    
+    return X, y
 
 
 def save_checkpoint(
@@ -47,6 +91,7 @@ def save_checkpoint(
             "scaler_X": scaler_X,
             "scaler_y": scaler_y,
             "config": CONFIG,
+            "predict_log": CONFIG["predict_log"],  
         },
         filepath,
     )
@@ -71,10 +116,20 @@ def train():
     # Load data
     print(f"Loading data from: {CONFIG['data_path']}")
     df = pd.read_csv(CONFIG["data_path"])
-    X = df[["Mix_H", "Mix_He", "Mix_Al", "Temperature", "Density"]].values
-    y = df[["Rosseland_opacity", "Planck_opacity"]].values
+    print(f"Raw data shape: {df.shape}")
+    
+    # Preprocess data (apply log transforms)
+    print("Preprocessing data (applying log transforms)...")
+    X, y = preprocess_data(df)
+    print(f"Preprocessed shapes - Features: {X.shape}, Targets: {y.shape}")
+    print(f"\nFeature ranges after preprocessing:")
+    print(f"  Mix_H: [{X[:, 0].min():.3f}, {X[:, 0].max():.3f}]")
+    print(f"  Mix_He: [{X[:, 1].min():.3f}, {X[:, 1].max():.3f}]")
+    print(f"  Mix_Al: [{X[:, 2].min():.3f}, {X[:, 2].max():.3f}]")
+    print(f"  log10(Temperature): [{X[:, 3].min():.2f}, {X[:, 3].max():.2f}]")
+    print(f"  log10(Density): [{X[:, 4].min():.2f}, {X[:, 4].max():.2f}]")
 
-    # Standardize data
+    # Standardize data (now operating on log-transformed data)
     scaler_X = StandardScaler().fit(X)
     scaler_y = StandardScaler().fit(y)
     X_scaled = torch.FloatTensor(scaler_X.transform(X))
@@ -88,7 +143,7 @@ def train():
         dataset, [train_size, val_size], generator=torch.Generator().manual_seed(42)
     )
 
-    print(f"Samples: {len(df)} -- Train: {train_size}, Val: {val_size}\n")
+    print(f"\nDataset split - Total: {len(df)}, Train: {train_size}, Val: {val_size}\n")
 
     # DataLoaders
     train_loader = DataLoader(
@@ -110,9 +165,10 @@ def train():
     )
 
     # Model
-    model = OpacityNet().to(device)
+    model = OpacityNet(predict_log=CONFIG["predict_log"]).to(device)
     num_params = sum(p.numel() for p in model.parameters())
     print(f"Model parameter count: {num_params:,}")
+    print(f"Predicting log-opacities: {CONFIG['predict_log']}")
 
     # Optimizer
     optimizer = optim.AdamW(
@@ -261,6 +317,7 @@ def train():
             "model_state_dict": final_checkpoint["model_state_dict"],
             "scaler_X": final_checkpoint["scaler_X"],
             "scaler_y": final_checkpoint["scaler_y"],
+            "predict_log": final_checkpoint["predict_log"],
         },
         "model.pth",
     )
