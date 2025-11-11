@@ -74,7 +74,7 @@ def predict(X: np.ndarray) -> np.ndarray:
     X_preprocessed = preprocess_inputs(X)
 
     # Standardize
-    X_scaled = scaler_X.transform(X)
+    X_scaled = scaler_X.transform(X_preprocessed)
     X_tensor = torch.FloatTensor(X_scaled)
 
     # Create DataLoader
