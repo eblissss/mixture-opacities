@@ -162,3 +162,12 @@ if __name__ == "__main__":
         print(f"  Inputs: H={X[i,0]:.6f}, He={X[i,1]:.6f}, Al={X[i,2]:.6f}, T={X[i,3]:.4e}, ρ={X[i,4]:.4e}")
         print(f"  Ground Truth:  Rosseland={y_true[i,0]:.4e}, Planck={y_true[i,1]:.4e}")
         print(f"  Predicted:     Rosseland={y_pred[i,0]:.4e}, Planck={y_pred[i,1]:.4e}")
+
+    # Calculate mean absolute percentage error (MAPE)
+    # mape = np.abs((y_true - y_pred) / y_true) * 100
+    # mape_rosseland = np.mean(mape[:, 0])
+    # mape_planck = np.mean(mape[:, 1])
+
+    # Print MAPE results
+    # print(f"Rosseland MAPE: {mape_rosseland:.2f}%")
+    # print(f"Planck MAPE:    {mape_planck:.2f}%")
