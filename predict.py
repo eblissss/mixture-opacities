@@ -139,5 +139,26 @@ def predict(X: np.ndarray) -> np.ndarray:
 
 if __name__ == "__main__":
     # Random numbers for now
-    samples = np.random.randn(1000000, 5)
-    preds = predict(samples)
+    # samples = np.random.randn(1000000, 5)
+    # preds = predict(samples)
+
+    n = 10
+
+    # Load data from CSV
+    df = pd.read_csv("opacity_data.csv")
+    sample_df = df.sample(n=n, random_state=42)
+    
+    # Extract inputs (first 5 columns) and ground truth (last 2 columns)
+    X = sample_df.iloc[:, :5].values
+    y_true = sample_df.iloc[:, 5:].values
+    
+    # Get predictions
+    y_pred = predict(X)
+    
+    # Print results
+    print("Comparison: Inputs | Ground Truth | Predictions")
+    for i in range(n):
+        print(f"\nSample {i+1}:")
+        print(f"  Inputs: H={X[i,0]:.6f}, He={X[i,1]:.6f}, Al={X[i,2]:.6f}, T={X[i,3]:.4e}, ρ={X[i,4]:.4e}")
+        print(f"  Ground Truth:  Rosseland={y_true[i,0]:.4e}, Planck={y_true[i,1]:.4e}")
+        print(f"  Predicted:     Rosseland={y_pred[i,0]:.4e}, Planck={y_pred[i,1]:.4e}")
