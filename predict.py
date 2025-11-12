@@ -12,16 +12,18 @@ CONFIG = {
     "batch_size": 1024,
     "num_workers": 4,
     "show_progress": True,
+    "test_type": "speed",  # "speed | samples | mape"
 }
+
 
 def preprocess_inputs(X: np.ndarray) -> np.ndarray:
     """
     Apply log-transform to temperature and density
     KEEPS ORIGINAL COLUMN ORDER
-    
+
     Args:
         X: Input array [N, 5] = [mH, mHe, mAl, Temperature, Density]
-    
+
     Returns:
         Preprocessed array [N, 5] = [mH, mHe, mAl, log10(Temperature), log10(Density)]
     """
@@ -31,15 +33,17 @@ def preprocess_inputs(X: np.ndarray) -> np.ndarray:
     mix_Al = X[:, 2]
     temperature = X[:, 3]
     density = X[:, 4]
-    
+
     # Apply log transform (add epsilon to avoid log(0))
     epsilon = 1e-10
     log_temperature = np.log10(np.maximum(temperature, epsilon))
     log_density = np.log10(np.maximum(density, epsilon))
-    
+
     # Keep original order: [mH, mHe, mAl, log_temp, log_density]
-    X_preprocessed = np.column_stack([mix_H, mix_He, mix_Al, log_temperature, log_density])
-    
+    X_preprocessed = np.column_stack(
+        [mix_H, mix_He, mix_Al, log_temperature, log_density]
+    )
+
     return X_preprocessed
 
 
@@ -138,36 +142,54 @@ def predict(X: np.ndarray) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    # Random numbers for now
-    # samples = np.random.randn(1000000, 5)
-    # preds = predict(samples)
+    if CONFIG["test_type"] == "speed":
+        samples = np.random.randn(1000000, 5)
+        preds = predict(samples)
 
-    n = 10
+    if CONFIG["test_type"] == "samples":
+        n = 10
 
-    # Load data from CSV
-    df = pd.read_csv("opacity_data.csv")
-    sample_df = df.sample(n=n, random_state=42)
-    
-    # Extract inputs (first 5 columns) and ground truth (last 2 columns)
-    X = sample_df.iloc[:, :5].values
-    y_true = sample_df.iloc[:, 5:].values
-    
-    # Get predictions
-    y_pred = predict(X)
-    
-    # Print results
-    print("Comparison: Inputs | Ground Truth | Predictions")
-    for i in range(n):
-        print(f"\nSample {i+1}:")
-        print(f"  Inputs: H={X[i,0]:.6f}, He={X[i,1]:.6f}, Al={X[i,2]:.6f}, T={X[i,3]:.4e}, ρ={X[i,4]:.4e}")
-        print(f"  Ground Truth:  Rosseland={y_true[i,0]:.4e}, Planck={y_true[i,1]:.4e}")
-        print(f"  Predicted:     Rosseland={y_pred[i,0]:.4e}, Planck={y_pred[i,1]:.4e}")
+        # Load data from CSV
+        df = pd.read_csv("opacity_data.csv")
+        sample_df = df.sample(n=n, random_state=42)
 
-    # Calculate mean absolute percentage error (MAPE)
-    # mape = np.abs((y_true - y_pred) / y_true) * 100
-    # mape_rosseland = np.mean(mape[:, 0])
-    # mape_planck = np.mean(mape[:, 1])
+        # Extract inputs (first 5 columns) and ground truth (last 2 columns)
+        X = sample_df.iloc[:, :5].values
+        y_true = sample_df.iloc[:, 5:].values
 
-    # Print MAPE results
-    # print(f"Rosseland MAPE: {mape_rosseland:.2f}%")
-    # print(f"Planck MAPE:    {mape_planck:.2f}%")
+        # Get predictions
+        y_pred = predict(X)
+
+        # Print results
+        print("Comparison: Inputs | Ground Truth | Predictions")
+        for i in range(n):
+            print(f"\nSample {i+1}:")
+            print(
+                f"  Inputs: H={X[i,0]:.6f}, He={X[i,1]:.6f}, Al={X[i,2]:.6f}, T={X[i,3]:.4e}, ρ={X[i,4]:.4e}"
+            )
+            print(
+                f"  Ground Truth:  Rosseland={y_true[i,0]:.4e}, Planck={y_true[i,1]:.4e}"
+            )
+            print(
+                f"  Predicted:     Rosseland={y_pred[i,0]:.4e}, Planck={y_pred[i,1]:.4e}"
+            )
+
+    if CONFIG["test_type"] == "mape":
+        # Load data from CSV
+        df = pd.read_csv("opacity_data.csv")
+
+        # Extract inputs (first 5 columns) and ground truth (last 2 columns)
+        X = df.iloc[:, :5].values
+        y_true = df.iloc[:, 5:].values
+
+        # Get predictions
+        y_pred = predict(X)
+
+        # Calculate mean absolute percentage error (MAPE)
+        mape = np.abs((y_true - y_pred) / y_true) * 100
+        mape_rosseland = np.mean(mape[:, 0])
+        mape_planck = np.mean(mape[:, 1])
+
+        # Print MAPE results
+        print(f"Rosseland MAPE: {mape_rosseland:.2f}%")
+        print(f"Planck MAPE:    {mape_planck:.2f}%")

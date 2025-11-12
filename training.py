@@ -16,7 +16,7 @@ from model import OpacityNet
 CONFIG = {
     "data_path": "opacity_data.csv",
     "val_split": 0.1,
-    "batch_size": 256,
+    "batch_size": 512,
     "epochs": 200,
     "learning_rate": 1e-3,
     "weight_decay": 1e-5,
@@ -25,14 +25,15 @@ CONFIG = {
     "predict_log": True,
 }
 
+
 def preprocess_data(df):
     """
     Preprocess raw data: apply log transforms to features and targets
-    
+
     Args:
-        df: DataFrame with columns [Mix_H, Mix_He, Mix_Al, Temperature, Density, 
+        df: DataFrame with columns [Mix_H, Mix_He, Mix_Al, Temperature, Density,
                                      Rosseland_opacity, Planck_opacity]
-    
+
     Returns:
         X: Preprocessed features [N, 5]
         y: Preprocessed targets [N, 2]
@@ -43,19 +44,19 @@ def preprocess_data(df):
     mix_Al = df["Mix_Al"].values
     temperature = df["Temperature"].values
     density = df["Density"].values
-    
+
     # Apply log transform to temperature and density (span many orders of magnitude)
     epsilon = 1e-10  # Avoid log(0)
     log_temperature = np.log10(np.maximum(temperature, epsilon))
     log_density = np.log10(np.maximum(density, epsilon))
-    
+
     # order: [mH, mHe, mAl, log_temp, log_density]
     X = np.column_stack([mix_H, mix_He, mix_Al, log_temperature, log_density])
-    
+
     # Extract targets
     rosseland = df["Rosseland_opacity"].values
     planck = df["Planck_opacity"].values
-    
+
     if CONFIG["predict_log"]:
         # Apply log transform to targets
         log_rosseland = np.log10(np.maximum(rosseland, epsilon))
@@ -65,7 +66,7 @@ def preprocess_data(df):
     else:
         y = np.column_stack([rosseland, planck])
         print("Targets: raw opacities")
-    
+
     return X, y
 
 
@@ -91,7 +92,7 @@ def save_checkpoint(
             "scaler_X": scaler_X,
             "scaler_y": scaler_y,
             "config": CONFIG,
-            "predict_log": CONFIG["predict_log"],  
+            "predict_log": CONFIG["predict_log"],
         },
         filepath,
     )
@@ -117,7 +118,7 @@ def train():
     print(f"Loading data from: {CONFIG['data_path']}")
     df = pd.read_csv(CONFIG["data_path"])
     print(f"Raw data shape: {df.shape}")
-    
+
     # Preprocess data (apply log transforms)
     print("Preprocessing data (applying log transforms)...")
     X, y = preprocess_data(df)

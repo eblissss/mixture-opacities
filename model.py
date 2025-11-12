@@ -11,7 +11,7 @@ class OpacityNet(nn.Module):
     def __init__(self, predict_log=True):
         """
         Neural network for opacity prediction
-        
+
         Args:
             predict_log: If True, predicts log10(opacity). If False, predicts raw opacity with positive constraint.
         """
@@ -38,16 +38,16 @@ class OpacityNet(nn.Module):
     def forward(self, x):
         """
         Forward pass
-        
+
         Args:
             x: Input tensor [batch, 5] = [mH, mHe, mAl, log10(Temperature), log10(Density)]
-        
+
         Returns:
             If predict_log=True: [batch, 2] = [log10(κR), log10(κP)]
             If predict_log=False: [batch, 2] = [κR, κP] (positive constrained)
         """
         output = self.net(x)
-        
+
         if self.predict_log:
             # Predicting log-opacities, no constraint needed
             # Positive constraint applied when converting: 10^output
