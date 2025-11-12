@@ -180,15 +180,15 @@ def train():
     )
     scheduler = OneCycleLR(
         optimizer,
-        max_lr=CONFIG["learning_rate"] * 10,
+        max_lr=CONFIG["learning_rate"] * 7,
         steps_per_epoch=len(train_loader),
         epochs=CONFIG["epochs"],
-        pct_start=0.3,
+        pct_start=0.45,
         anneal_strategy="cos",
         div_factor=25.0,
-        final_div_factor=1e4,
+        final_div_factor=1e3,
     )
-    criterion = nn.MSELoss()
+    criterion = nn.SmoothL1Loss(beta=0.1)
     scaler = GradScaler(device_type) if use_amp else None
 
     # TensorBoard
