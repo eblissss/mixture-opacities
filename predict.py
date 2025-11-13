@@ -12,7 +12,7 @@ CONFIG = {
     "batch_size": 1024,
     "num_workers": 4,
     "show_progress": True,
-    "test_type": "speed",  # "speed | samples | mape"
+    "test_type": "mape",  # "speed | samples | mape"
 }
 
 
@@ -140,6 +140,18 @@ def predict(X: np.ndarray) -> np.ndarray:
 
     return predictions
 
+def log_uniform(low, high, num = 1):
+    log_low = np.log(low)
+    log_high = np.log(high)
+    samples = np.random.uniform(log_low, log_high, size=num)
+    return np.exp(samples)
+
+def get_plausible_random_inputs(num = 10000):
+    # Get random element mixture
+    fractions = np.random.dirichlet([1, 1, 1], num)
+    rho = log_uniform(0.00001, 100, num).reshape(-1, 1)
+    temp = np.random.uniform(0.0005, 40, num).reshape(-1, 1)
+    return np.concatenate((fractions, rho, temp), axis=1)
 
 if __name__ == "__main__":
     if CONFIG["test_type"] == "speed":
