@@ -14,7 +14,7 @@ We strive to achieve maximum accuracy and efficiency in our design.
     - `git clone https://github.com/eblissss/mixture-opacities.git`
     - `cd mixture-opacities`
 - Have Python Installed and use virtual environment
-    - Run `python3 -m venv .venv` and `source venv/bin/activate` (Linux/Mac)
+    - Run `python3 -m venv .venv` and `source .venv/bin/activate` (Linux/Mac)
 - Then install requirements
     - Run `pip install -r requirements.txt`
 
