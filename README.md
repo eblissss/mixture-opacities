@@ -33,7 +33,7 @@ We fetch the data from [LANL TOPS Opacities](https://aphysics2.lanl.gov/)
 Feel free to modify the configuration, including hyperparameters
 - Model architecture configured in `model.py`
 
-Simply run `python src/train.py` to train!
+Simply run `python src/training.py` to train!
 - Outputs `best.pth` as the best checkpoint with full state
 - Outputs `model.pth` as inference-ready model
 - Also includes TensorBoard logs in `runs/` directory
