@@ -11,7 +11,7 @@ import os
 import numpy as np
 import time
 
-NUM_RUNS = 200
+NUM_RUNS = 2000
 OUTPUT_FILE = "opacity_data.csv"
 USE_CHROME_DEV = True
 CHROME_VERSION = "143.0.7475.7"
@@ -150,7 +150,7 @@ def main():
 
             rho_min = np.random.uniform(0.000005, 0.00002)
             rho_max = np.random.uniform(75, 125)
-            num_rho = np.random.randint(11, 20)
+            num_rho = np.random.randint(7, 20)
 
             # Page 1: Fill form (make sure options are valid on site)
             print("\tFilling in form")
