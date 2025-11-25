@@ -3,8 +3,8 @@ import torch.nn.functional as F
 
 input_dim = 5
 output_dim = 2
-hidden_dims = [512, 256, 256, 128, 64]
-dropout = 0.2
+hidden_dims = [1024, 512, 512, 512, 256, 128]
+dropout = 0.00 # Less regularization - we have 1.8M samples
 
 
 class OpacityNet(nn.Module):
