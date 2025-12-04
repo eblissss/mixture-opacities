@@ -102,6 +102,15 @@ def main():
     predictions_log = scaler_y.inverse_transform(predictions_scaled)
     y_val_pred = np.power(10, predictions_log)  # Convert from log-space
     
+    # Save results for plotting
+    print("\nSaving validation results to validation_results.csv...")
+    results_df = pd.DataFrame(X_val, columns=["Mix_H", "Mix_He", "Mix_Al", "Temperature", "Density"])
+    results_df["Rosseland_opacity"] = y_val_true[:, 0]
+    results_df["Planck_opacity"] = y_val_true[:, 1]
+    results_df["Pred_Rosseland"] = y_val_pred[:, 0]
+    results_df["Pred_Planck"] = y_val_pred[:, 1]
+    results_df.to_csv("validation_results.csv", index=False)
+
     # Calculate MAPE
     mape = np.abs((y_val_true - y_val_pred) / y_val_true) * 100
     mape_rosseland = np.mean(mape[:, 0])
