@@ -1,5 +1,8 @@
 ## Deep Learning of Mixture Opacities
-A PyTorch deep learning model for predicting nuclear hydrodynamic mixture opacities (Rosseland and Planck) from composition and thermodynamic properties. 
+A PyTorch deep learning model for predicting nuclear hydrodynamic mixture opacities (Rosseland and Planck) from composition and thermodynamic properties.
+
+<img width="1080" alt="Poster created using results from this repository." src="https://github.com/user-attachments/assets/4190e83d-803a-4bc8-89cc-24ecc92e9607" />
+
 
 ### Architecture
 We strive to achieve maximum accuracy and efficiency in our design.
